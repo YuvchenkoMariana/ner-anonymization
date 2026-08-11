@@ -3,3 +3,6 @@ datasets
 seqeval
 torch
 langchain
+python-dotenv
+langchain-openai
+faiss-cpu
