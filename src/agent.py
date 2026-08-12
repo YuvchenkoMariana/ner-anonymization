@@ -25,11 +25,23 @@ agent = create_tool_calling_agent(agent_llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 
-if __name__ == "__main__":
-    result1 = agent_executor.invoke(
-        {"input": "Anonymize this text: John traveled to Paris last week."}
-    )
-    print("\nFINAL ANSWER 1:", result1["output"])
+def run_cli() -> None:
+    """Interactive terminal loop for the agent — type 'exit' or 'quit' to stop."""
+    print("NER Anonymization & Student RAG Agent — type 'exit' to quit.\n")
+    while True:
+        try:
+            user_input = input("You: ")
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
 
-    result2 = agent_executor.invoke({"input": "When was Mariana born?"})
-    print("\nFINAL ANSWER 2:", result2["output"])
+        if user_input.strip().lower() in ("exit", "quit"):
+            print("Goodbye!")
+            break
+
+        result = agent_executor.invoke({"input": user_input})
+        print("Agent:", result["output"], "\n")
+
+
+if __name__ == "__main__":
+    run_cli()

@@ -32,14 +32,18 @@ def answer_about_student(question: str) -> str:
     relevant_chunks = vector_store.similarity_search(question, k=4)
     context = "\n\n".join(chunk.page_content for chunk in relevant_chunks)
 
-    prompt = f"""Answer the question using only the context below. If the answer isn't in the context, say you don't know.
+    prompt = f"""Answer the question using only the context below. If the answer
+    isn't explicitly stated in the context, do not calculate or infer facts
+    (like age from a birth date) using assumptions that aren't given in the
+    context. Instead, politely reply that you don't have access to that
+    information.
 
-Context:
-{context}
+    Context:
+    {context}
 
-Question: {question}
+    Question: {question}
 
-Answer:"""
+    Answer:"""
 
     response = llm.invoke(prompt)
     return response.content
