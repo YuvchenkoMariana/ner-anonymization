@@ -31,6 +31,28 @@ def anonymize_text(text: str) -> str:
 
 
 if __name__ == "__main__":
-    example = "John traveled to Paris last week and met Sarah."
+    example = "John traveled to the Poland"
     print("Original:  ", example)
     print("Anonymized:", anonymize_text.invoke(example))
+
+    if __name__ == "__main__":
+        test_cases = [
+            "Helen traveled to USA.",
+            "Helen traveled to the USA.",
+            "Helen traveled to the United States of America.",
+            "John traveled to the Poland.",
+            "John traveled to Poland.",
+        ]
+        for text in test_cases:
+            print(text, "->", ner_pipeline(text))
+
+if __name__ == "__main__":
+    test_cases = [
+        "John traveled to Poland.",
+        "John traveled to Poland yesterday.",
+        "The president of Poland visited the city.",
+        "John traveled to Germany.",
+        "John traveled to Canada.",
+    ]
+    for text in test_cases:
+        print(text, "->", ner_pipeline(text))
