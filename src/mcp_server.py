@@ -7,8 +7,9 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 from mcp.server.fastmcp import FastMCP
-
 from anonymize import ner_pipeline
+from anonymize_uk import ner_pipeline_uk, merge_overlapping_entities
+
 from rag import vector_store, llm
 
 mcp = FastMCP("ner-anonymization-tools")
@@ -18,6 +19,22 @@ mcp = FastMCP("ner-anonymization-tools")
 def anonymize_text(text: str) -> str:
     """Redact LOCATION and DATE entities from text, replacing them with [LOC]/[DATE]."""
     entities = ner_pipeline(text)
+    for ent in sorted(entities, key=lambda e: e["start"], reverse=True):
+        label = "LOC" if "LOC" in ent["entity_group"] else "DATE"
+        text = text[: ent["start"]] + f"[{label}]" + text[ent["end"] :]
+    return text
+
+
+
+@mcp.tool()
+def anonymize_text_uk(text: str) -> str:
+    """Anonymize Ukrainian text by redacting locations and dates.
+
+    Use this tool specifically when the input text is in Ukrainian.
+    Returns the same text with every detected location replaced by
+    [LOC] and every detected date/period replaced by [DATE].
+    """
+    entities = merge_overlapping_entities(ner_pipeline_uk(text))
     for ent in sorted(entities, key=lambda e: e["start"], reverse=True):
         label = "LOC" if "LOC" in ent["entity_group"] else "DATE"
         text = text[: ent["start"]] + f"[{label}]" + text[ent["end"] :]

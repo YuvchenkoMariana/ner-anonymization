@@ -1,7 +1,11 @@
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import os
+
+os.environ["PYTHONUTF8"] = "1"
+os.environ["PYTHONIOENCODING"] = "utf-8"
 from pathlib import Path
 
 from langchain_openai import ChatOpenAI
@@ -19,10 +23,11 @@ agent_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 prompt = ChatPromptTemplate.from_messages([
     (
         "system",
-        "You are a helpful assistant with two tools: one anonymizes "
-        "locations and dates in a piece of text, another answers "
-        "questions about the student Mariana. Choose the right tool "
-        "based on what the user is asking for.",
+        "You are a helpful assistant with three tools: one anonymizes "
+        "locations and dates in English text, another does the same for "
+        "Ukrainian text, and a third answers questions about the student "
+        "Mariana. Choose the right tool based on the input language and "
+        "what the user is asking for.",
     ),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}"),
@@ -30,11 +35,16 @@ prompt = ChatPromptTemplate.from_messages([
 
 SERVER_PATH = str(Path(__file__).parent / "mcp_server.py")
 
+
 async def ask_agent(user_input: str) -> str:
     """Opens a fresh MCP connection for this single request and closes it
     afterwards — simpler and more robust than keeping one long-lived
     connection alive across python-telegram-bot's per-message tasks."""
-    server_params = StdioServerParameters(command="python", args=[SERVER_PATH])
+    server_params = StdioServerParameters(
+        command="python",
+        args=[SERVER_PATH],
+        env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
+    )
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
@@ -57,7 +67,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_text(output)
 
 
-
 def main() -> None:
     token = os.environ["TELEGRAM_BOT_TOKEN"]
     app = Application.builder().token(token).build()
@@ -71,4 +80,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
