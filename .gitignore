@@ -5,3 +5,4 @@ __pycache__/
 venv/
 .idea/
 test_rag.py
+logs/

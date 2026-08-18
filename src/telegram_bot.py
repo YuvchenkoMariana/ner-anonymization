@@ -6,7 +6,21 @@ import os
 
 os.environ["PYTHONUTF8"] = "1"
 os.environ["PYTHONIOENCODING"] = "utf-8"
+
+import logging
 from pathlib import Path
+
+LOG_DIR = Path(__file__).parent.parent / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_DIR / "telegram_bot.log"),
+    ],
+)
+logger = logging.getLogger(__name__)
 
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_tool_calling_agent, AgentExecutor
@@ -63,8 +77,19 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    output = await ask_agent(update.message.text)
-    await update.message.reply_text(output)
+    chat_id = update.effective_chat.id
+    logger.info("Received message from chat %s", chat_id)
+    try:
+        output = await ask_agent(update.message.text)
+        await update.message.reply_text(output)
+    except Exception:
+        # logger.exception includes the full traceback in the log — without
+        # this, a failed tool call or MCP disconnect would previously fail
+        # silently from the user's perspective (no reply, no visible error).
+        logger.exception("Failed to process message from chat %s", chat_id)
+        await update.message.reply_text(
+            "Sorry, something went wrong processing your message. Please try again."
+        )
 
 
 def main() -> None:
