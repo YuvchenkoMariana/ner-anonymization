@@ -109,3 +109,4 @@ websockets==17.0.1
 xxhash==3.8.1
 yarl==1.22.0
 zstandard==0.25.0
+locust==2.46.3
