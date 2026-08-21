@@ -1,4 +1,5 @@
 name: Tests
+run-name: Run pytest suite
 
 on:
   push:
