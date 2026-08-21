@@ -35,19 +35,13 @@ if __name__ == "__main__":
     print("Original:  ", example)
     print("Anonymized:", anonymize_text.invoke(example))
 
-    if __name__ == "__main__":
-        test_cases = [
-            "Helen traveled to USA.",
-            "Helen traveled to the USA.",
-            "Helen traveled to the United States of America.",
-            "John traveled to the Poland.",
-            "John traveled to Poland.",
-        ]
-        for text in test_cases:
-            print(text, "->", ner_pipeline(text))
-
-if __name__ == "__main__":
+    # Domain-shift / capitalization findings (see README Findings) —
+    # kept as runnable examples rather than deleted.
     test_cases = [
+        "Helen traveled to USA.",
+        "Helen traveled to the USA.",
+        "Helen traveled to the United States of America.",
+        "John traveled to the Poland.",
         "John traveled to Poland.",
         "John traveled to Poland yesterday.",
         "The president of Poland visited the city.",

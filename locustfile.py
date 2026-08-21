@@ -16,7 +16,7 @@ class NerServiceUser(HttpUser):
     def anonymize_ukrainian(self):
         self.client.post(
             "/anonymize/uk",
-            json={"text": "Іван поїхав до Львова минулого тижня."},
+            json={"text": "Олег поїхав до Львова у червні."},
         )
 
 
