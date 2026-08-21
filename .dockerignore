@@ -5,3 +5,4 @@ __pycache__/
 notebooks/
 *.pyc
 .env
+src/request_examples
