@@ -90,6 +90,7 @@ Built with LangChain (`create_tool_calling_agent` + `AgentExecutor`).
   Each service has its own `Dockerfile` (`Dockerfile.ner`, `Dockerfile.rag`), and `docker-compose.yml` networks them together with the agent's own container (`Dockerfile`) so they can reach each other by service name (`http://ner-service:8001`) instead of `localhost`. Service URLs are read from environment variables (`NER_SERVICE_URL`, `RAG_SERVICE_URL`) with `localhost` defaults, so the same code works standalone or via compose.
 - **Docker:** all three Dockerfiles use `python:3.11-slim` (upgraded from `3.9-slim` — the `mcp` package requires Python ≥3.10). `ENV PYTHONUTF8=1` works around a locale-related `UnicodeEncodeError` that only shows up inside the minimal image, not locally on macOS — the same fix was needed again for Cyrillic text passing through the MCP subprocess.
 - **Telegram bot:** `src/telegram_bot.py`, built on `python-telegram-bot`. Opens a fresh MCP connection per incoming message (simpler and more robust than trying to keep one long-lived connection alive across the bot's per-message async tasks).
+- **Web UI (bonus):** `src/streamlit_app.py` — a chat interface built with Streamlit, using the same per-message MCP client pattern as the Telegram bot. Adds LOC/DATE badge highlighting, multi-chat history, one-click examples, and a light/dark theme with adjustable text size. Chosen over React (the ТЗ's suggested option) to fit the project timeline — see [Findings](#findings--design-decisions).
 - **Load testing (bonus):** `locustfile.py` simulates concurrent users against the NER and RAG HTTP endpoints — see [Findings](#findings--design-decisions) for what it revealed about relative latency.
 - **Logging:** `mcp_server.py` and `telegram_bot.py` log every tool call, its duration, and any errors to `logs/*.log` (file only, kept out of the console so the interactive CLI and LangChain's `verbose=True` trace stay readable).
 
@@ -111,6 +112,7 @@ pytest tests/ -v
 - **Overlapping entity spans (Ukrainian):** inflected word forms broke the naive right-to-left replacement — e.g. "Варшаві" (locative case of Варшава) was split by SentencePiece into overlapping/touching subword predictions, producing a garbled `[LOC]ршав[LOC]` instead of one clean `[LOC]`. Fixed with a `merge_overlapping_entities` helper that merges touching/overlapping same-type spans before replacing.
 - **Multi-word date phrases (Ukrainian):** "минулого тижня" ("last week") is only partially redacted — "минулого" is tagged `DATE`, but "тижня" isn't recognized as a continuation. Likely due to the ~5x smaller Ukrainian training set (11k vs 60k examples) underrepresenting this specific phrasing, the same underlying issue as the English domain-shift finding, just attributable to dataset size rather than style.
 - **NER vs. RAG latency (load testing):** Locust load tests show the NER endpoints responding in ~60–130ms (local model inference) versus the RAG endpoint at ~950–3400ms (depends on external OpenAI API round-trips). Splitting the backend into microservices made this bottleneck directly visible and measurable — harder to isolate in a monolithic design.
+- **Streamlit over React for the UI bonus:** the ТЗ names React as the example UI stack, but it's an optional "plus" item — Streamlit was chosen instead to stay within the project timeline, since it's pure Python (no separate build tooling/JS layer) and still supports a fully custom chat UI via CSS.
 
 ## Setup & Usage
 
@@ -150,6 +152,13 @@ docker run -it --env-file .env ner-anonymization-agent
 python src/telegram_bot.py
 ```
 
+**Run the web UI (Streamlit):**
+```bash
+cd src
+streamlit run streamlit_app.py
+```
+Make sure `ner-service`/`rag-service` are running first (see above). Opens automatically at `http://localhost:8501`.
+
 **Run tests:**
 ```bash
 pytest tests/ -v
@@ -177,8 +186,11 @@ ner-anonymization/
 │   ├── agent.py               # LangChain agent, CLI entry point, MCP client
 │   ├── mcp_server.py          # MCP server — tools delegate to microservices over HTTP
 │   ├── telegram_bot.py        # Telegram bot on top of the MCP-connected agent
+│   ├── streamlit_app.py       # Web chat UI on top of the MCP-connected agent (bonus)
 │   ├── ner_service.py         # FastAPI microservice wrapping Tools 1 & 3 (bonus)
 │   └── rag_service.py         # FastAPI microservice wrapping Tool 2 (bonus)
+├── .streamlit/
+│   └── config.toml            # base Streamlit theme for the web UI (bonus)
 ├── tests/
 │   ├── conftest.py
 │   ├── test_anonymize.py
